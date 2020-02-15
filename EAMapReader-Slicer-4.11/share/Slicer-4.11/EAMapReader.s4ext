@@ -5,9 +5,9 @@
 #
 
 # This is source code manager (i.e. svn)
-#scm git
-#scmurl https://github.com/
-#scmrevision 
+scm git
+scmurl https://github.com/
+scmrevision 1.0
 
 # list dependencies
 # - These should be names of other modules that have .s4ext files
@@ -18,7 +18,7 @@
 build_subdirectory .
 
 # homepage
-#homepage https://github.com/lassoan/SlicerSegmentEditorExtraEffects
+#homepage https://github.com/stephan1312/SlicerEAMapReader
 
 # Firstname1 Lastname1 ([SubOrg1, ]Org1), Firstname2 Lastname2 ([SubOrg2, ]Org2)
 # For example: Jane Roe (Superware), John Doe (Lab1, Nowhere), Joe Bloggs (Noware)
@@ -28,7 +28,7 @@ contributors Stephan Hohmann (Translational Interventional Electrophysiology Lab
 category Cardiac Electrophysiology
 
 # url to icon (png, size 128x128 pixels)
-#iconurl https://raw.githubusercontent.com/lassoan/SlicerSegmentEditorExtraEffects/master/SegmentEditorExtraEffects.png
+iconurl https://raw.githubusercontent.com/stephan1312/SlicerEAMapReader/master/EAMapReader-icon.png
 
 # Give people an idea what to expect from this code
 #  - Is it just a test or something you stand behind?
@@ -38,7 +38,7 @@ status
 description Read electroanatomic maps exported from various systems into 3D Slicer
 
 # Space separated list of urls
-#screenshoturls https://raw.githubusercontent.com/lassoan/SlicerSegmentEditorExtraEffects/master/FastMarchingInput.png https://raw.githubusercontent.com/lassoan/SlicerSegmentEditorExtraEffects/master/FastMarchingOutput.png https://raw.githubusercontent.com/lassoan/SlicerSegmentEditorExtraEffects/master/WatershedOutput.png 
+#screenshoturls  
 
 # 0 or 1: Define if the extension should be enabled after its installation.
 enabled 1
