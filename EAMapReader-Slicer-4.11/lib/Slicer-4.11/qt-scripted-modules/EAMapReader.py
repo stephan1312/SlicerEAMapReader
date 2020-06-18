@@ -520,6 +520,7 @@ class EAMapReaderLogic(ScriptedLoadableModuleLogic):
     trianglesText = ""
     scalarsText = ""
     attributesText = ""
+    scalarLabels = ""
     
     with open(filename, "r") as filehandle:
       for line in filehandle:
@@ -586,8 +587,15 @@ class EAMapReaderLogic(ScriptedLoadableModuleLogic):
       if self.abortRequested:
         return False
       
-    scalars = self.TextToFloat(scalarsText)
-    attributes = self.TextToFloat(attributesText)   # currently not used
+    if len(scalarsText) > 0:
+      scalars = self.TextToFloat(scalarsText)
+    else:
+      scalars = []
+    
+    if len(attributesText) > 0:
+      attributes = self.TextToFloat(attributesText)   # currently not used
+    else:
+      attributes = []
     
     self.addLog("  Read "+str(len(vertices))+" vertices, "+str(len(vertexnormals))+" vertex normals, and "+str(len(triangles))+" triangles.")
     self.addLog("  Read "+str(len(scalarLabels))+" sets of scalars: "+str(scalarLabels)+".")
