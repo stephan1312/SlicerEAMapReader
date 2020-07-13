@@ -47,3 +47,5 @@ Keep all .000 - .00n files in the same folder and chose the .000 for import (the
 ## Funding acknowledgement 
 The development of this software tool was in part funded through a research fellowship grant by the the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) – project no. 380200397 (to Stephan Hohmann).
 
+## Citation
+If you use EAMapReader in your own research please cite the following publication: Hohmann S, Henkenberens C, Zormpas C, Christiansen H, Bauersachs J, Duncker D, Veltmann C. A novel open-source software based high-precision workflow for target definition in cardiac radioablation J Cardiovasc Electrophysiol. 2020. doi:10.1111/jce.14660 

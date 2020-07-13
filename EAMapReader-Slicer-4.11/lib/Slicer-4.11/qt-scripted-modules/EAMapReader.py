@@ -24,7 +24,7 @@ class EAMapReader(ScriptedLoadableModule):
     self.parent.title = "EA Map Reader" 
     self.parent.categories = ["Cardiac Electrophysiology"]
     self.parent.dependencies = []
-    self.parent.contributors = ["Stephan Hohmann (Hannover Medical School and Mayo Clinic Translational Interventional Electrophysiology Lab)"]
+    self.parent.contributors = ["Stephan Hohmann (Hannover Medical School)"]
     self.parent.helpText = """
 This extension reads electroanatomic maps exported from various systems into 3D Slicer.
 Currently supported are Ensite NavX (Abbott, St. Paul, MN), CARTO 3 (Biosense Webster, Diamond Bar, CA), and RHYTHMIA (Boston Scientific, Marlborough, MA). 
@@ -34,8 +34,10 @@ See documentation for detailed export instructions.
 """
     self.parent.helpText += self.getDefaultModuleDocumentationLink()
     self.parent.acknowledgementText = """
-This extension was developed by Stephan Hohmann, Hannover Medical School and Mayo Clinic Translational Interventional Electrophysiology Laboratory.
+This extension was developed by Stephan Hohmann, Hannover Medical School.
 This work was funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) - project no. 380200397.
+If you use EAMapReader in your own research please cite the following publication: Hohmann S, Henkenberens C, Zormpas C, Christiansen H, Bauersachs J, Duncker D, Veltmann C. A novel open-source software based high-precision workflow for target definition in cardiac radioablation. J Cardiovasc Electrophysiol 2020. doi:10.1111/jce.14660 
+
 """ 
 
 ################################################################################
