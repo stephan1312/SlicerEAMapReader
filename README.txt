@@ -10,7 +10,7 @@ In the extension manager select "Install from file" and install the EAMapReader.
  
 ## Export data from the Electroanatomic Mapping System
 
-### Velocity
+### NavX
 1.	Load study
 2.	Display data of interest (LAT/bipolar/unipolar)
 3.	File -> Export
@@ -48,4 +48,4 @@ Keep all .000 - .00n files in the same folder and chose the .000 for import (the
 The development of this software tool was in part funded through a research fellowship grant by the the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) – project no. 380200397 (to Stephan Hohmann).
 
 ## Citation
-If you use EAMapReader in your own research please cite the following publication: Hohmann S, Henkenberens C, Zormpas C, Christiansen H, Bauersachs J, Duncker D, Veltmann C. A novel open-source software based high-precision workflow for target definition in cardiac radioablation J Cardiovasc Electrophysiol. 2020. doi:10.1111/jce.14660 
+If you use EAMapReader in your own research please cite the following publication: Hohmann S, Henkenberens C, Zormpas C, Christiansen H, Bauersachs J, Duncker D, Veltmann C. A novel open-source software based high-precision workflow for target definition in cardiac radioablation. J Cardiovasc Electrophysiol. (2020) doi:10.1111/jce.14660 
