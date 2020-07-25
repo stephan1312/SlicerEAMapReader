@@ -475,7 +475,7 @@ class EAMapReaderLogic(ScriptedLoadableModuleLogic):
     with zipfile.ZipFile(filename, "r") as cartoArchive:
       fileList = cartoArchive.namelist()
       for singleFile in fileList:
-        if singleFile.endswith(".mesh") or singleFile.endswith("_car.txt"):
+        if singleFile.endswith(".mesh") or singleFile.endswith("_car.txt") or singleFile == "VisiTagExport/Sites.txt":
           cartoArchive.extract(singleFile, tempDir)
         if self.abortRequested:
           shutil.rmtree(tempDir) 
@@ -497,14 +497,17 @@ class EAMapReaderLogic(ScriptedLoadableModuleLogic):
         if not self.readCartoPoints(os.path.join(tempDir, filename)):
           shutil.rmtree(tempDir)
           return False
-      
       self.progress = self.progress + progressIncrement
       self.updateProgress()
       if self.abortRequested:
         shutil.rmtree(tempDir) 
         return False
-          
-    # Delete temp dir
+    
+    if os.path.exists(os.path.join(tempDir, "VisiTagExport/Sites.txt")):
+      if not self.readCartoAblationSites(os.path.join(tempDir, "VisiTagExport/Sites.txt")):
+        shutil.rmtree(tempDir)
+    
+    #Delete temp dir
     self.addLog("Cleaning up temporary files.")
     shutil.rmtree(tempDir)
     
@@ -659,10 +662,59 @@ class EAMapReaderLogic(ScriptedLoadableModuleLogic):
     
     self.addLog("Created markup fiducials "+pointsName+".")
     fiducialsNode.CreateDefaultDisplayNodes()
+
+    return True
+
+  def readCartoAblationSites(self, filename):
+    pointsName = ntpath.basename(filename)
+    self.addLog("Reading "+pointsName+":")
     
+    fiducialsNode = slicer.mrmlScene.AddNewNodeByClass('vtkMRMLMarkupsFiducialNode')
+    fiducialsNode.GetMarkupsDisplayNode().SetVisibility(0)
+    
+    with open(filename, "r") as filehandle:
+      for line in filehandle:
+        if self.abortRequested:
+          return False
+        # Remove trailing newline and trailing and leading spaces
+        line = re.sub("[\n]$", "", line)
+        line = re.sub("[ ]*$", "", line)
+        line = re.sub("^[ ]*", "", line)
+        if len(line) == 0: # empty line
+          continue
+        lineElements = re.split("[ \t]*", line)
+        if lineElements[0] == "Session" or lineElements[0] == "VERSION_4_0":
+          continue
+        pointNr = int(lineElements[2])
+        pointX = float(lineElements[3]) 
+        pointY = float(lineElements[4]) 
+        pointZ = float(lineElements[5])  
+        duration = float(lineElements[6])
+        avgForce = float(lineElements[7])
+        power = float(lineElements[8])
+        fti = float(lineElements[9])
+        n = fiducialsNode.AddFiducial(pointX, pointY, pointZ)
+        fiducialsNode.SetNthControlPointLabel(n, "Ablation site # "+str(pointNr))
+        fiducialsNode.SetNthControlPointDescription(n, "FTI "+str(fti)+" ("+str(duration)+" sec, "+str(power)+" W, "+str(avgForce)+" g")
+        fiducialsNode.SetNthControlPointLocked(n, 1)
+             
+    self.transformCarto(fiducialsNode)        
+    
+    pointsName = "CARTOablationsites"
+    fiducialsNode.SetName(pointsName)
+    fiducialsNode.GetMarkupsDisplayNode().SetTextScale(0)
+    fiducialsNode.GetMarkupsDisplayNode().SetUseGlyphScale(False)
+    fiducialsNode.GetMarkupsDisplayNode().SetGlyphSize(6)
+    fiducialsNode.GetMarkupsDisplayNode().SetSelectedColor(1,0,0)
+    fiducialsNode.GetMarkupsDisplayNode().SetVisibility(1)
+    
+    self.addLog("Created markup fiducials "+pointsName+".")
+    fiducialsNode.CreateDefaultDisplayNodes()
     
     return True
-        
+
+
+
   def transformCarto(self, node):
     # CARTO mesh is in LPS and seems to be additionally rotated 90 deg around the LR axis
     # Transform matrix from CARTO to Slicer is
