@@ -527,7 +527,7 @@ class EAMapReaderLogic(ScriptedLoadableModuleLogic):
     attributesText = ""
     scalarLabels = ""
     
-    with open(filename, "r") as filehandle:
+    with open(filename, "r", encoding="latin-1") as filehandle:
       for line in filehandle:
         if self.abortRequested:
           return False
@@ -627,7 +627,7 @@ class EAMapReaderLogic(ScriptedLoadableModuleLogic):
     fiducialsNode = slicer.mrmlScene.AddNewNodeByClass('vtkMRMLMarkupsFiducialNode')
     fiducialsNode.GetMarkupsDisplayNode().SetVisibility(0)
     
-    with open(filename, "r") as filehandle:
+    with open(filename, "r", encoding="latin-1") as filehandle:
       for line in filehandle:
         if self.abortRequested:
           return False
@@ -672,7 +672,7 @@ class EAMapReaderLogic(ScriptedLoadableModuleLogic):
     fiducialsNode = slicer.mrmlScene.AddNewNodeByClass('vtkMRMLMarkupsFiducialNode')
     fiducialsNode.GetMarkupsDisplayNode().SetVisibility(0)
     
-    with open(filename, "r") as filehandle:
+    with open(filename, "r", encoding="latin-1") as filehandle:
       for line in filehandle:
         if self.abortRequested:
           return False
