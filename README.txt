@@ -29,9 +29,10 @@ Note: Due to a known software bug in Carto 3 version 6 the HD coloring feature n
 5.	Back in the start-up screen, select “System”
 6.	In the “System tools” menu, select the Export Data… button
 7.	Select the correct patient. After the prior export (step 3), there should be a file called “Export_Study_[some numbers].zip” with today’s date and “RawData” in the “Type” column
-8.	Select this file for export  (by clicking the arrow to the right of the file list), select the export target at the bottom of the screen, and hit export.
-9.	This .zip file is ready for import using EAMapReader
-10. Re-enable HD coloring as necessary
+8.	Select this file for export  (by clicking the arrow to the right of the file list), select the export target at the bottom of the screen, and hit export. You have to chose a password for the export.
+9.	The actual study data .zip file is exported inside another (encrypted) .zip file which needs to be unpacked first. So open the .zip file with any zip extractor using the password you chose in step 8. Inside this password-protected "container" zip file there should be the actual study zip (named “Export_Study_[some numbers].zip”). Extract this file out of the container, using the password you chose.
+10.	This (unencrypted) .zip file which you just took out of the export container is ready for import using EAMapReader
+11. Re-enable HD coloring as necessary
 
 ### RHYTHMIA
 Close study and backup to external drive (no special export needed).
