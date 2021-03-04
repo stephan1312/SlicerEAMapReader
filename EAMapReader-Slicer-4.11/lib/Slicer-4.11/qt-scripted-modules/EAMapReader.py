@@ -462,6 +462,7 @@ class EAMapReaderLogic(ScriptedLoadableModuleLogic):
   def readCarto(self, filename):
     self.progress = 0
     self.updateProgress()
+    self.maxDistance = 7.0
     if not zipfile.is_zipfile(filename):
       self.addLog("File is not a valid zip archive: "+filename)
       return False 
@@ -487,12 +488,20 @@ class EAMapReaderLogic(ScriptedLoadableModuleLogic):
     progressSteps = len(os.listdir(tempDir))
     progressEnd = 100
     progressIncrement = ((progressEnd - self.progress)/progressSteps)
-         
-    for filename in os.listdir(tempDir):
+    filesInDir =os.listdir(tempDir)    
+    for filename in filesInDir:
       if filename.endswith(".mesh"):
-        if not self.readCartoMesh(os.path.join(tempDir, filename)):
-          shutil.rmtree(tempDir)
-          return False
+        carFile=""
+        print("test \n{}".format(filename[0:-5]+"_car.txt"))
+        if (filename[0:-5]+"_car.txt") in filesInDir:
+          carFile=filename[0:-5]+"_car.txt"
+          if not self.readCartoMesh(os.path.join(tempDir, filename),os.path.join(tempDir, carFile)):
+            shutil.rmtree(tempDir)
+            return False
+        else:    
+          if not self.readCartoMesh(os.path.join(tempDir, filename),[]):
+            shutil.rmtree(tempDir)
+            return False
       if filename.endswith("_car.txt"):
         if not self.readCartoPoints(os.path.join(tempDir, filename)):
           shutil.rmtree(tempDir)
@@ -517,7 +526,140 @@ class EAMapReaderLogic(ScriptedLoadableModuleLogic):
     
     return True
 
-  def readCartoMesh(self, filename):
+  def interpolateFromCar(self, vertices,triangles,carFile):
+    self.addLog("Interpolate from car  file, this can take a while ")
+    [success,pointso,data]=self.readCarFile (carFile)    
+    if not success:
+      return [False,[],[]]
+      
+    pointsData= np.zeros([len(data),3],dtype=float)
+    for i in range(len(data)):
+      for n in range(3):
+        pointsData[i,n]=data[i][n]    
+
+    points= np.array(pointso)
+    if len(points)==0:
+          return [True,[],[]]
+    badPoints=(pointsData[:,2] >-9999.0)
+    pointsData=pointsData[badPoints,:]
+    points=points[badPoints,:]
+    mesh={}
+    mesh['v']=vertices
+    mesh['t']=triangles
+    if self.abortRequested:
+      return False
+    self.addLog("   Project points to Surface ...")
+    ret = self.PointsToSurfaceDistanceV(mesh,points)    
+    self.addLog("   Interpolate ...")    
+
+    s=  self.maxDistance /(2.0*2.302585) # This number makes sure the weigth is 0.1 at the maxDistance
+    inter=self.Interpolate(ret['newPoints'],pointsData, mesh['v'],s,self.maxDistance*self.maxDistance)        
+    self.addLog("Done")
+
+    return [True, ["Interpolated Lat"],[inter]]
+
+  def pointsToTriangleV(self,A,B,C,Points):    
+      """
+      Projects a numpy array of points to a triangle spand by A, B, C
+      A: (1 x 3 ) Point 
+      B: (1 x 3 ) Point 
+      C: (1 x 3 ) Point 
+      Points: (n x 3) Point array
+      """
+      #Build plane from  normal
+      n = np.cross(np.subtract(B,A),np.subtract(C,A))
+      n *= 1.0/np.linalg.norm(n)
+      AC= np.subtract(C,A)
+      AB= np.subtract(B,A)
+      dot00 = np.dot(AC,AC)
+      dot01 = np.dot(AC,AB)
+      dot11 = np.dot(AB,AB)
+      d = dot00 * dot11 - dot01 *dot01
+
+      dPlaneV= np.dot(Points,n)-np.dot(A,n)
+
+      t1=np.repeat(n ,len(dPlaneV),axis=0).reshape([3,len(dPlaneV)])  
+      pPlaneV = np.add(Points, np.multiply(t1, -dPlaneV ).transpose() )
+      ApV= np.subtract(pPlaneV,A)    
+      dot02V = np.tensordot(ApV,AC,axes=(1))
+      dot12V = np.tensordot(ApV,AB,axes=(1)) 
+      uV = (dot11 * dot02V - dot01 * dot12V) /d
+      vV = (dot00 * dot12V - dot01 * dot02V) /d
+      #Now force the point to be on the on triangle
+      uV[uV<0]=0 
+      vV[vV<0]=0
+      t=uV+vV
+      uV[t>1]/=t[t>1]
+      vV[t>1]/=t[t>1] 
+      # Generate the new point
+      newPV=  np.add(A,np.add(np.tensordot(uV ,AC, axes=(0)),   np.tensordot(vV ,AB, axes=(0))))
+      tV=np.subtract(Points,newPV)
+      distanceV=np.sum(tV*tV,axis=1)        
+      return [newPV, distanceV]
+
+  def PointsToSurfaceDistanceV(self,mesh,points):
+      """
+      Projects all points in the numpy array points to th mesh
+      Mesh: Dictionary containing verties ['v'] and triangles ['t']
+      Points: (n x 3) Point array
+      """
+      
+      numP= np.shape(points)[0]
+      
+      mindist=(np.arange(numP,dtype=float)+1)*np.inf
+      newPoint=(np.arange(numP*3,dtype=float)+1).reshape([numP,3])
+      triangles = np.array(mesh['t'], dtype='int')
+      vert = mesh['v']
+      for tri in triangles:
+          # Loop over all verticies        
+          A=vert[tri[0]]
+          B=vert[tri[1]]
+          C=vert[tri[2]] 
+          ret= self.pointsToTriangleV(A,B,C,points)          
+          t=(mindist>ret[1])
+          mindist[t]=ret[1][t]
+          newPoint[t,:]=ret[0][t] 
+      mindist=np.sqrt(mindist)
+      
+      return {'newPoints':newPoint, 'distances':mindist}
+
+
+  def flatten(self,iterable):
+      """
+      Flattens the iterable object
+      """
+      try:
+          iterator = iter(iterable)
+      except TypeError:
+          yield iterable
+      else:
+          for element in iterator:
+              yield from flatten(element)
+
+  def Interpolate(self,sourcePoints,sourceData, targetPoints, ssq,maxDist):
+    """
+    Interpolate the source data from the source points to target points,
+    The weigthed interpolation uses the exponential function exp (-distanc/2*ssq).
+    The support of the interpolated is maxDist
+    """
+    weigths=np.zeros([len(sourcePoints),len(targetPoints)])
+    for i in range(len(sourcePoints)):
+      tV=np.subtract(targetPoints,sourcePoints[i,:])
+      distanceV=np.sum(tV*tV,axis=1)
+      [ind,]=np.where(distanceV<maxDist)
+      x2=np.sum(tV[ind,:]*tV[ind,:],axis=1)
+      weigths[i,ind]=np.exp(-x2/(2.0*ssq))
+    s=np.sum(weigths,axis=0)
+
+
+    l=weigths/s
+    weigths=np.nan_to_num(l)    
+    
+    r=np.dot(sourceData[:,2],weigths)
+    r[s==0]=-10000
+    return r
+
+  def readCartoMesh(self, filename,carFile):
     meshName = ntpath.basename(filename)
     self.addLog("Reading "+meshName+":")
     section = "none"
@@ -597,6 +739,11 @@ class EAMapReaderLogic(ScriptedLoadableModuleLogic):
     else:
       scalars = []
     
+    if len(carFile) > 0:
+      [sug,scalarLabels,scalars]= self.interpolateFromCar(vertices,triangles,carFile)
+      if sug == False:
+        return False
+
     if len(attributesText) > 0:
       attributes = self.TextToFloat(attributesText)   # currently not used
     else:
@@ -620,26 +767,24 @@ class EAMapReaderLogic(ScriptedLoadableModuleLogic):
     
     return True
 
-  def readCartoPoints(self, filename):
+  def readCarFile (self, filename):
     pointsName = ntpath.basename(filename)
-    self.addLog("Reading "+pointsName+":")
-    
-    fiducialsNode = slicer.mrmlScene.AddNewNodeByClass('vtkMRMLMarkupsFiducialNode')
-    fiducialsNode.GetMarkupsDisplayNode().SetVisibility(0)
-    
+    self.addLog("Reading "+pointsName+":")        
+    points=[]
+    data=[]
     with open(filename, "r", encoding="latin-1") as filehandle:
       for line in filehandle:
         if self.abortRequested:
-          return False
-        # Remove trailing newline and trailing and leading spaces
+          return [False,[],[]]
+        #Remove trailing newline and trailing and leading spaces
         line = re.sub("[\n]$", "", line)
         line = re.sub("[ ]*$", "", line)
         line = re.sub("^[ ]*", "", line)
         if len(line) == 0: # empty line
           continue
-        lineElements = re.split("[ \t]*", line)
+        lineElements = re.split("[ \t]+", line)
         if lineElements[0] == "VERSION_5_0" or lineElements[0] == "VERSION_4_0":
-          pointsName = lineElements[1]
+          pointsName = lineElements[1]        
         if lineElements[0] == "P":
             pointNr = int(lineElements[2])
             pointX = float(lineElements[4]) 
@@ -648,10 +793,25 @@ class EAMapReaderLogic(ScriptedLoadableModuleLogic):
             unipolar = float(lineElements[10])
             bipolar = float(lineElements[11])
             lat = float(lineElements[12])
-            n = fiducialsNode.AddFiducial(pointX, pointY, pointZ)
-            fiducialsNode.SetNthControlPointLabel(n, "Point # "+str(pointNr)+" in "+pointsName)
-            fiducialsNode.SetNthControlPointDescription(n, "Bipolar "+str(bipolar)+" / Unipolar "+str(unipolar)+" / LAT "+str(lat))
-            fiducialsNode.SetNthControlPointLocked(n, 1)
+            points.append([pointX,pointY,pointZ])
+            data.append([unipolar,bipolar,lat,pointNr,pointsName])
+    return [True,points,data]
+
+  def readCartoPoints(self, filename):
+    pointsName = ntpath.basename(filename)
+    self.addLog("Reading "+pointsName+":")
+    
+    fiducialsNode = slicer.mrmlScene.AddNewNodeByClass('vtkMRMLMarkupsFiducialNode')
+    fiducialsNode.GetMarkupsDisplayNode().SetVisibility(0)
+    [success,points,data]=self.readCarFile (filename)
+    if not success:
+      return False
+
+    for i in range(len(points)):
+      n = fiducialsNode.AddFiducial(points[i][0], points[i][1], points[i][0])
+      fiducialsNode.SetNthControlPointLabel(n, "Point # "+str(data[i][3])+" in "+data[i][4])
+      fiducialsNode.SetNthControlPointDescription(n, "Bipolar "+str(data[i][1])+" / Unipolar "+str(data[i][0])+" / LAT "+str(data[i][2]))
+      fiducialsNode.SetNthControlPointLocked(n, 1)
              
     self.transformCarto(fiducialsNode)        
     
