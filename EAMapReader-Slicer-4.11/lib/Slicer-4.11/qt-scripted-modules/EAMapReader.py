@@ -626,7 +626,7 @@ class EAMapReaderLogic(ScriptedLoadableModuleLogic):
     
     fiducialsNode = slicer.mrmlScene.AddNewNodeByClass('vtkMRMLMarkupsFiducialNode')
     fiducialsNode.GetMarkupsDisplayNode().SetVisibility(0)
-    
+    wasModified = fiducialsNode.StartModify()
     with open(filename, "r", encoding="latin-1") as filehandle:
       for line in filehandle:
         if self.abortRequested:
@@ -652,7 +652,8 @@ class EAMapReaderLogic(ScriptedLoadableModuleLogic):
             fiducialsNode.SetNthControlPointLabel(n, "Point # "+str(pointNr)+" in "+pointsName)
             fiducialsNode.SetNthControlPointDescription(n, "Bipolar "+str(bipolar)+" / Unipolar "+str(unipolar)+" / LAT "+str(lat))
             fiducialsNode.SetNthControlPointLocked(n, 1)
-             
+    fiducialsNode.EndModify(wasModified)
+
     self.transformCarto(fiducialsNode)        
     
     pointsName = "CARTOpoints_"+re.sub("_car.txt$", "", pointsName)
