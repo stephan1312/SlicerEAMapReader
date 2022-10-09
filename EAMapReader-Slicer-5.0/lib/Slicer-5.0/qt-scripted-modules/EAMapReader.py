@@ -720,7 +720,7 @@ class EAMapReaderLogic(ScriptedLoadableModuleLogic):
         line = re.sub("^[ ]*", "", line)
         if len(line) == 0: # empty line
           continue
-        lineElements = re.split("\s+", line) #[ \t]*
+        lineElements = re.split("\s+", line)
         if lineElements[0] == "Session" or lineElements[0] == "VERSION_4_0":
           continue
         pointNr = int(lineElements[2])
